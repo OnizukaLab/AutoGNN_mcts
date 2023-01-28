@@ -1,0 +1,5 @@
+trial,best_epoch,train_AUC,test_AUC,val_AUC,train_time,gnn_time,mlp_time,test_node_list
+1,70,0.987492230305509,0.9655131441144698,0.96776169106725,35076.49387049675,0.005687236785888672,0.023406267166137695,4930
+train_AUC_mean,train_AUC_variance,test_AUC_mean,test_AUC_variance,val_AUC_mean,val_AUC_variance,train_time_mean,gnn_time_mean,mlp_time_mean,mlp_time_mean_per_node,best_epoc_mean
+0.987492230305509,0.0,0.9655131441144698,0.0,0.96776169106725,0.0,35076.49387049675,0.005687236785888672,0.023406267166137695,4.7477215347135285e-06,70.0
+
