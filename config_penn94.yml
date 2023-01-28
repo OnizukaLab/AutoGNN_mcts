@@ -1,0 +1,15 @@
+gnn:
+  layer_sizes: [1, 2, 3]
+  emb_sizes: [16, 32, 64]
+  activation_functions: ['none', 'relu', 'sigmoid', 'tanh']
+  attention_mechanisms: ['constant', 'gcn', 'gat']
+  jumping_knowledges: ['none', 'cat', 'max']
+  jknet_preMLP: [0, 1]
+preMLP:
+  layer_sizes: [0, 1]
+  emb_sizes: [16, 32, 64, 128, 256]
+postMLP:
+  hidden_layers: [1, 2]
+  hidden_sizes: [64, 128, 256]
+general:
+  lr: [0.01]
