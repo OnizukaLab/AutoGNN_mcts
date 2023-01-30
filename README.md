@@ -14,6 +14,10 @@ This is a an implementation of a graph NAS method with Monte-Carlo tree search.
 - `$test_size` set test data size
 - `$epoch` set the number of epochs
 - `$dataset_name` set the detaset name
+- `$num_models` set the number of architectures
+- `$search threshold` set the visit times to generate child nodes
+- `$mcts_score_sqrt` set c of ucs
+- `$eval_type` set the mode of search algorithm (max or avg)
 
 ex) `python3 main.py -train_size 0.5 -val_size 0.25 -test_size 0.25 -epoch 500 -dataset_name cora`
 
