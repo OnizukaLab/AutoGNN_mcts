@@ -17,5 +17,5 @@ This is a an implementation of a graph NAS method with Monte-Carlo tree search.
 
 ex) `python3 main.py -train_size 0.5 -val_size 0.25 -test_size 0.25 -epoch 500 -dataset_name cora`
 
-CSV files are generated at result directory.
+CSV files are generated at results directory.
 
