@@ -38,7 +38,6 @@ class ModelConfig:
     16. 3 layer's emd size
     17. lr
     '''
-
     def __init__(self, params):
         self.params = params
 
@@ -171,7 +170,7 @@ class ModelConfig:
 
 class MctsNode:
 
-    def __init__(self, config, runner, parent, choice, max_try_count=40, expand_threshold=20, stepMode=True):
+    def __init__(self, config, runner, parent, choice, max_try_count=40, expand_threshold=20, stepMode=True, mcts_score_sqrt = 2, eval_type = "avg"):
 
         self.config = config
         self.runner = runner
@@ -188,9 +187,13 @@ class MctsNode:
         if parent is not None:
             self.max_try_count = parent.max_try_count
             self.expand_threshold = parent.expand_threshold
+            self.mcts_score_sqrt = parent.mcts_score_sqrt
+            self.eval_type = parent.eval_type
         else:
             self.max_try_count = max_try_count
             self.expand_threshold = expand_threshold
+            self.mcts_score_sqrt = mcts_score_sqrt
+            self.eval_type = eval_type
 
     def get_params(self):
 
@@ -289,9 +292,11 @@ class MctsNode:
 
     def auc(self):
 
-        # ave or max
-        #return mean(self.auc_list)
-        return max(self.auc_list)
+        # avg or max
+        if self.eval_type == "avg":
+            return mean(self.auc_list)
+        else:
+            return max(self.auc_list)
 
     def uct(self, all_count):
 
@@ -300,10 +305,13 @@ class MctsNode:
         if len(self.auc_list) == 0:
             return np.inf
 
-        c = math.sqrt(2)
-        # ave or max
-        #value = mean(self.auc_list) + c * math.sqrt(math.log(all_count)/self.try_count)
-        value = max(self.auc_list) + c * math.sqrt(math.log(all_count)/self.try_count)
+        c = math.sqrt(self.mcts_score_sqrt)
+        
+        # avg or max
+        if self.eval_type == "avg":
+            value = mean(self.auc_list) + c * math.sqrt(math.log(all_count)/self.try_count)
+        else:
+            value = max(self.auc_list) + c * math.sqrt(math.log(all_count)/self.try_count)
 
         return value
 
