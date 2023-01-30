@@ -143,6 +143,12 @@ if __name__ == "__main__":
     parser.add_argument('-dropout', '--dropout', default=0.2, type=float)
     parser.add_argument('-trial', '--trial', default=5, type=int)
     parser.add_argument('-datasave', action='store_true')
+    
+    parser.add_argument('-num_models', '--num_models', default=1000, type=int)
+    parser.add_argument('-search_threshold', '--search_threshold', default=10, type=int)
+    parser.add_argument('-mcts_score_sqrt', '--mcts_score_sqrt', default=2, type=int)
+    parser.add_argument('-eval_type', '--eval_type', default='avg', type=str)
+    
     args = parser.parse_args()
 
     dataset_name = args.dataset_name
@@ -154,6 +160,12 @@ if __name__ == "__main__":
     dropout = args.dropout
     trial = args.trial
     datasave = args.datasave
+    
+    num_models = args.num_models
+    search_threshold = args.search_threshold
+    mcts_score_sqrt = args.mcts_score_sqrt
+    eval_type = args.eval_type
+    
 
     # data load
     if os.path.isfile("saved_data/{}/x.pt".format(dataset_name)):
@@ -277,7 +289,7 @@ if __name__ == "__main__":
         runner.set_dataset(train_data, train_node_list, val_data, val_node_list, test_data, test_node_list)
         runner.set_answer(train_ans, train_ans_bin, val_ans, val_ans_bin, test_ans, test_ans_bin)
 
-        root = MctsNode(config, runner, None, None, 1000, 10, False)
+        root = MctsNode(config, runner, None, None, num_models, search_threshold, False, mcts_score_sqrt, eval_type)
         root.search()
 
         auc, comb, seed = root.select_max_auc_param_list()
