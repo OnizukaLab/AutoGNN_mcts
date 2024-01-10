@@ -1,5 +1,5 @@
-# Explainable Graph Nueral Architecture Search for Homophilic and Heterophilic Graphs
-This is a an implementation of a graph NAS method with Monte-Carlo tree search.
+# Graph Neural Architecture Search for Homophilic and Heterophilic Graphs
+This is an implementation of a graph NAS method with Monte-Carlo tree search.
 
 ## Setup
 - python=3.9
