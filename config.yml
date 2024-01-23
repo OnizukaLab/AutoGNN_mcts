@@ -9,7 +9,7 @@ preMLP:
   layer_sizes: [0, 1]
   emb_sizes: [16, 32, 64, 128, 256]
 postMLP:
-  hidden_layers: [1, 2]
+  hidden_layers: [0, 1, 2]
   hidden_sizes: [64, 128, 256]
 general:
   lr: [0.01]
