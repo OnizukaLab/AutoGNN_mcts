@@ -18,8 +18,9 @@ This is an implementation of a graph NAS method with Monte-Carlo tree search.
 - `$search threshold` set the visit times to generate child nodes
 - `$mcts_score_sqrt` set c of ucs
 - `$eval_type` set the mode of search algorithm (max or avg)
+- `$eval_mode` set the mode of evaluation (acc or auc)
 
-ex) `python3 main.py -train_size 0.5 -val_size 0.25 -test_size 0.25 -epoch 500 -dataset_name cora`
+ex) `python3 main.py -train_size 0.6 -val_size 0.2 -test_size 0.2 -epoch 500 -trial 5 -num_models 1000 -search_threshold 10 -mcts_score_sqrt 2 -eval_type avg -eval_mode acc -dataset_name cora`
 
 CSV files are generated at results directory.
 
