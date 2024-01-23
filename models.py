@@ -140,15 +140,20 @@ class MLP(nn.Module):
     def __init__(self, hidden_layer, emb_size, out_size, hidden_size=64):
         super(MLP, self).__init__()
         self.hidden_layer = hidden_layer
-        self.fc_in = nn.Linear(emb_size, hidden_size)
-        self.fc_mid = nn.Linear(hidden_size, hidden_size)
-        self.fc_out = nn.Linear(hidden_size, out_size)
+        fc_layers = []
+        for layer in range(self.hidden_layer):
+            isize = emb_size if layer == 0 else hidden_size
+            osize = out_size if layer == self.hidden_layer-1 else hidden_size
+            fc_layers.append(nn.Linear(isize, osize))
+        self.fc_layers = nn.ModuleList(fc_layers)
 
     def forward(self, x):
-        x = F.relu(self.fc_in(x))
-        for layer in range(self.hidden_layer-1):
-            x = F.relu(self.fc_mid(x))
-        return self.fc_out(x)
+        for layer in range(self.hidden_layer):
+            if layer == self.hidden_layer -1:
+                x = self.fc_layers[layer](x)
+            else:
+                x = F.relu(self.fc_layers[layer](x))
+        return x
 
 
 
