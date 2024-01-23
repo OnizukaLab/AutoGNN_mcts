@@ -17,6 +17,9 @@ def fix_seed(seed):
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
 
+# model params
+def params_count(model):
+    return sum([p.numel() for p in model.parameters()])
 
 class ModelConfig:
     '''
@@ -60,7 +63,7 @@ class ModelConfig:
             else:
                 return self.params["gnn"]["jknet_preMLP"]
         elif i == 3: # JKnet
-            if fix_params[0] == 1:
+            if fix_params[0] == 1 and fix_params[2] == 0:
                 return ['none']
             else:
                 return self.params["gnn"]["jumping_knowledges"]
@@ -70,7 +73,7 @@ class ModelConfig:
             return self.params["gnn"]["attention_mechanisms"]
         elif i == 6: # postMLP
             plist = copy.copy(self.params["postMLP"]["hidden_layers"])
-            if fix_params[4] != 'none' and 0 in plist:
+            if (fix_params[3] != 'none' or (fix_params[0] == 1 and fix_params[4] != 'none')) and 0 in plist:
                 plist.remove(0)
             return plist
         elif i == 7: # pre MLP emb size
@@ -113,7 +116,10 @@ class ModelConfig:
         elif i == 13: # 3 layer's activation func
             if fix_params[0] >= 2:
                 if fix_params[0] >= 3:
-                    return self.params["gnn"]["activation_functions"]
+                    if fix_params[6] == 0 and fix_params[0] == 3:
+                        return ['none']
+                    else:
+                        return self.params["gnn"]["activation_functions"]
                 else:
                     return ['']
             else:
@@ -170,7 +176,7 @@ class ModelConfig:
 
 class MctsNode:
 
-    def __init__(self, config, runner, parent, choice, max_try_count=40, expand_threshold=20, stepMode=True, mcts_score_sqrt = 2, eval_type = "avg"):
+    def __init__(self, config, runner, parent, choice, max_try_count=40, max_search_time=3600, expand_threshold=20, stepMode=True, mcts_score_sqrt = 2, eval_type = "avg"):
 
         self.config = config
         self.runner = runner
@@ -186,11 +192,13 @@ class MctsNode:
 
         if parent is not None:
             self.max_try_count = parent.max_try_count
+            self.max_search_time = parent.max_search_time
             self.expand_threshold = parent.expand_threshold
             self.mcts_score_sqrt = parent.mcts_score_sqrt
             self.eval_type = parent.eval_type
         else:
             self.max_try_count = max_try_count
+            self.max_search_time = max_search_time
             self.expand_threshold = expand_threshold
             self.mcts_score_sqrt = mcts_score_sqrt
             self.eval_type = eval_type
@@ -233,16 +241,24 @@ class MctsNode:
 
     def search(self):
 
+        search_start_time = time.time()
+
         if len(self.child_trees) == 0:
             self.init_child_trees()
         if len(self.child_trees) == 0:
             return
 
         for i in range(self.child_try_count, self.max_try_count):
-
+            # UCT get
             node = self.best_node(i)
             node.play()
             self.child_try_count += 1
+
+            search_time = time.time() - search_start_time
+
+            if search_time > self.max_search_time:
+                print('Search time exceed the limit. time:', search_time)
+                break
 
         if self.stepMode == False:
             return
@@ -257,8 +273,10 @@ class MctsNode:
         start_time = time.time()
         auc = -1
         if self.try_count > self.expand_threshold:
+
             auc = self.expand_play()
         if auc == -1:
+
             model_params = self.get_params()
 
             seed = len(model_params) * 100 + self.try_count
@@ -266,10 +284,25 @@ class MctsNode:
             model_params = self.config.get_params(model_params)
             mode_prams_conv = self.config.convert_model_param(model_params)
 
-            print('Before model run:', mode_prams_conv)
-            model, e, auc = self.runner.run_model(mode_prams_conv)
-            self.run_param_list.append([auc, mode_prams_conv, seed])
-            print('model run:', mode_prams_conv, auc)
+            print('Start model run:', mode_prams_conv)
+
+            model_train_start_time = time.time()
+            try:
+                model, e, auc = self.runner.run_model(mode_prams_conv)
+            except MemoryError:
+                print('Memory Error:', mode_prams_conv)
+                auc = 0
+            else:
+                self.run_param_list.append([auc, mode_prams_conv, seed])
+                print('End model run:', mode_prams_conv, 'max_val_AUC:', auc, 'model_run_count:', self.runner.model_run_count)
+
+                model_train_time = time.time() - model_train_start_time
+
+                params_num = params_count(model)
+
+                self.runner.writer.writerow([self.runner.trial, self.runner.model_run_count, mode_prams_conv[0], mode_prams_conv[1],
+                                             mode_prams_conv[2], mode_prams_conv[3], mode_prams_conv[4], mode_prams_conv[5], mode_prams_conv[6], mode_prams_conv[7], mode_prams_conv[8],
+                                             mode_prams_conv[9], mode_prams_conv[10], auc, model_train_time, params_num])
 
         exec_time = time.time() - start_time
 
@@ -292,7 +325,7 @@ class MctsNode:
 
     def auc(self):
 
-        # avg or max
+        # mean or max
         if self.eval_type == "avg":
             return mean(self.auc_list)
         else:
@@ -307,7 +340,7 @@ class MctsNode:
 
         c = math.sqrt(self.mcts_score_sqrt)
         
-        # avg or max
+        # mean or max
         if self.eval_type == "avg":
             value = mean(self.auc_list) + c * math.sqrt(math.log(all_count)/self.try_count)
         else:
@@ -366,6 +399,10 @@ class MctsNode:
             return plist, None
         return plist, deep_list[0]
 
+
+
+
+
 class dummy_runner:
     def run_model(self, comb):
         return None, 0, random.random()
@@ -377,12 +414,15 @@ if __name__ == "__main__":
 
         root = MctsNode(config, dummy_runner(), None, None, 1000, 10, False)
         root.search()
+        # deepest_node = root.get_deepest_node()
 
         auc_param_list, deep_node = root.get_auc_param_list()
         for x in auc_param_list:
+            # x[2]:offset, x[0]:auc, x[3]:len(auc_list), x[1]:params, x[4]:mean(exec_time_list)
             print("MCTS Node : ", "  " * x[2], x[0], x[3], x[1], x[4])
 
         auc, comb, seed = root.select_max_auc_param_list()
         print("Best Node: ", comb, auc)
+        # print("Best Node: ", deep_node[0], deep_node[1])
 
         print("Model Count : ", len(root.collect_run_param_list()))
