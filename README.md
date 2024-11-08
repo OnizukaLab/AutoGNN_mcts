@@ -1,4 +1,4 @@
-# Graph Neural Architecture Search for Homophilic and Heterophilic Graphs
+# Explanable Graph Neural Architecture Search via Monte-Carlo tree search
 This is an implementation of a graph NAS method with Monte-Carlo tree search.
 
 ## Setup
